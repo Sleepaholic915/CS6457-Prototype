@@ -11,10 +11,10 @@ public class PlayerCharacterController : MonoBehaviour
     public float walkSpeed = 2f;
     public float runSpeed = 5f;
     public float jumpForce = 5f;
-    public float jumpCooldown = 5f;
-    public float attackCooldown = 2f;
-    public float movementDisableDuration = 3f;
-    public float attackAnimationDuration = 3f;
+    public float jumpCooldown = 0.1f;
+    public float attackCooldown = 0.1f;
+    public float movementDisableDuration = 1f;
+    public float attackAnimationDuration = 1f;
 
     private bool isJumping = false;
     private bool areMovementControlsDisabled = false;
@@ -27,52 +27,58 @@ public class PlayerCharacterController : MonoBehaviour
         rb = GetComponent<Rigidbody>();
     }
 
-    void FixedUpdate()
-    {
-        if (!areMovementControlsDisabled)
+     void FixedUpdate()
         {
-            float horizontalInput = Input.GetAxis("Horizontal");
-            float verticalInput = Input.GetAxis("Vertical");
-
-            Vector3 movementDirection = new Vector3(horizontalInput, 0f, verticalInput).normalized;
-            if (movementDirection != Vector3.zero)
+            if (!areMovementControlsDisabled)
             {
-                transform.rotation = Quaternion.LookRotation(movementDirection);
+                // Check if Left Shift is pressed to start running
                 if (Input.GetKey(KeyCode.LeftShift))
                 {
                     isRunning = true;
-                    animator.SetFloat("Speed", 1f); // Set speed to 2 when running
+                    animator.SetFloat("Speed", 1f); // Set speed to run
+                    Vector3 movementDirection = transform.forward; // Always move forward
+                    rb.MovePosition(rb.position + movementDirection * runSpeed * Time.deltaTime);
                 }
                 else
                 {
                     isRunning = false;
-                    animator.SetFloat("Speed", .5f); // Set speed to 1 when walking
+                    // Handle normal movement with arrow keys
+                    float horizontalInput = -Input.GetAxis("Horizontal");
+                    float verticalInput = -Input.GetAxis("Vertical");
+
+                    Vector3 movementDirection = new Vector3(horizontalInput, 0f, verticalInput).normalized;
+
+                    if (movementDirection != Vector3.zero)
+                    {
+                        transform.rotation = Quaternion.LookRotation(movementDirection);
+                        animator.SetFloat("Speed", 0.5f); // Set speed to walk
+                    }
+                    else
+                    {
+                        animator.SetFloat("Speed", 0f); // Idle when not moving
+                    }
+
+                    // Move the player using Rigidbody
+                    rb.MovePosition(rb.position + movementDirection * walkSpeed * Time.deltaTime);
                 }
             }
-            else
+
+            // Handle jumping
+            if (Input.GetKeyDown(KeyCode.Space) && !isJumping && Time.time - lastJumpTime > jumpCooldown)
             {
-                animator.SetFloat("Speed", 0f); // Set speed to 0 when idle
+                isJumping = true;
+                lastJumpTime = Time.time;
+                StartCoroutine(JumpRoutine());
             }
 
-            // Move the character using Rigidbody
-            rb.MovePosition(rb.position + movementDirection * (isRunning ? runSpeed : walkSpeed) * Time.deltaTime);
+            // Handle attacking
+            if (Input.GetMouseButtonDown(0) && Time.time - lastAttackTime > attackCooldown)
+            {
+                lastAttackTime = Time.time;
+                StartCoroutine(AttackRoutine());
+            }
         }
 
-        // Handle jumping with cooldown
-        if (Input.GetKeyDown(KeyCode.Space) && !isJumping && Time.time - lastJumpTime > jumpCooldown)
-        {
-            isJumping = true;
-            lastJumpTime = Time.time;
-            StartCoroutine(JumpRoutine());
-        }
-
-        // Handle attacking with cooldown
-        if (Input.GetKeyDown(KeyCode.Mouse0) && Time.time - lastAttackTime > attackCooldown)
-        {
-            lastAttackTime = Time.time;
-            StartCoroutine(AttackRoutine());
-        }
-    }
 
     IEnumerator JumpRoutine()
     {
@@ -88,13 +94,26 @@ public class PlayerCharacterController : MonoBehaviour
         DisableMovementControls();
 
         // Trigger attack animation
-        animator.SetTrigger("Attack");
+        animator.SetTrigger("NormalATK");
 
         // Implement attack logic here
 
         // Wait for the specified duration (attackAnimationDuration) before enabling movement controls
-        yield return new WaitForSeconds(attackAnimationDuration);
+        yield return new WaitForSeconds(0.1f);
 
+        // Enable movement controls after duration
+        EnableMovementControls();
+    }
+
+    IEnumerator RunRoutine()
+    {
+        // Disable movement controls
+        DisableMovementControls();
+
+        // Trigger attack animation
+        animator.SetTrigger("Run");
+        transform.Translate(Vector3.forward * Time.deltaTime);
+        yield return new WaitForSeconds(0.1f);
         // Enable movement controls after duration
         EnableMovementControls();
     }
