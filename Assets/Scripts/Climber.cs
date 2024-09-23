@@ -9,14 +9,20 @@ public class Climber : MonoBehaviour
 
     private int _idx = 0;
 
-    void OnCollisionEnter(Collision collision)
+    void OnTriggerEnter(Collision collision)
     {
+        Debug.Log("Collider");
         // On collide with player
         if (collision.gameObject.tag == "Player")
         {
             // Show canvas
             Canvas.SetActive(true);
         }
+    }
+
+    private void OnTriggerExit(Collider other)
+    {
+        Canvas.SetActive(false);
     }
 
     public void Unlock()
