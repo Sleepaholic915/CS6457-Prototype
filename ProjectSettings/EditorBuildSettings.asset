@@ -5,7 +5,10 @@ EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Scenes:
-  - enabled: 1
+  - enabled: 0
     path: Assets/Scenes/SampleScene.unity
     guid: d1c3109bdb54ad54c8a2b2838528e640
+  - enabled: 1
+    path: Assets/LowPolyBoy/CuteTownAssetPack/DemoScene/DemoScene_01.unity
+    guid: 625e3f80d830f72458a61b53945a260c
   m_configObjects: {}
